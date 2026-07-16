@@ -3,13 +3,13 @@
 **Public, free, at-scale image CDN for the AT Protocol ecosystem.** Served at
 `img.infra.coop`.
 
-The first service in the [co/infra](https://infra.coop) cooperative — community-owned
+The first service in the [co/infra](https://infra.coop) cooperative - community-owned
 public infrastructure for the open social web. This repo is the image CDN specifically;
 the co/infra umbrella site (project index, supporters/sponsors, per-project about
 pages, membership) is a separate project.
 
 A community-owned image transformation service for ATProto blobs. No signup, no API
-keys, no billing — any app can point `<img>` tags at it and get fast, optimized,
+keys, no billing - any app can point `<img>` tags at it and get fast, optimized,
 edge-cached images pulled straight from users' PDSes.
 
 ```
@@ -18,21 +18,21 @@ https://img.infra.coop/i/{did}/{cid}/{params}
 
 ## Why (and how this differs from Refract)
 
-[Refract](../refract-worker) already solves image optimization for ATProto — but it's
+[Refract](../refract-worker) already solves image optimization for ATProto - but it's
 built for **app developers who self-host** a worker for their own, small-scope image
 needs. It transforms inline at the edge with Cloudflare Image Resizing (`cf.image`),
 which bills **per unique transform**.
 
 That model breaks as a **public utility at scale**. The same image (a viral blog cover,
 a common avatar) is high-fanout across many apps, and a genuinely public service sees a
-long tail of sizes/formats. At ~100M requests/month, `cf.image` runs to **~$50k/mo** —
+long tail of sizes/formats. At ~100M requests/month, `cf.image` runs to **~$50k/mo** -
 untenable for something free.
 
 co/infra keeps Refract's URL contract and DID-resolution logic but swaps the
 **transform + cache layer**:
 
 - **imgproxy** on a VPS does the actual transformation (fixed cost, not per-transform).
-- **Cloudflare R2** is the durable cache — transform once, store forever (CIDs are
+- **Cloudflare R2** is the durable cache - transform once, store forever (CIDs are
   immutable), **free egress** through Cloudflare's CDN.
 - The **Worker** just routes: check R2 → hit serves directly; miss proxies to imgproxy,
   stores the result, serves it.
@@ -65,12 +65,12 @@ browser ──▶ Cloudflare Worker (img.infra.coop)
                      └─ serve bytes + immutable cache headers
 ```
 
-- **Worker** — edge router. Reuses Refract's DID resolution, CID/param parsing, URL
+- **Worker** - edge router. Reuses Refract's DID resolution, CID/param parsing, URL
   contract.
-- **R2** — cache store. Key: `{did}/{cid}/{params_hash}.{format}`. No TTL (CIDs are
+- **R2** - cache store. Key: `{did}/{cid}/{params_hash}.{format}`. No TTL (CIDs are
   immutable). Free egress is the economic keystone.
-- **KV** — DID → PDS endpoint mappings (1h TTL).
-- **imgproxy** — transform engine on a cheap VPS (Hetzner). Only touched on cache miss;
+- **KV** - DID → PDS endpoint mappings (1h TTL).
+- **imgproxy** - transform engine on a cheap VPS (Hetzner). Only touched on cache miss;
   hot content approaches 100% hit ratio and never hits it.
 
 ## URL format
@@ -98,9 +98,9 @@ deterministic cache entry (no `Vary`-driven cache explosion).
 
 Examples:
 
-- `w=800,f=auto` — 800px wide, best format the client supports
-- `w=200,h=200,fit=cover,g=face` — 200×200 face-aware avatar
-- `w=20,blur=10,q=30` — tiny blurred placeholder
+- `w=800,f=auto`: 800px wide, best format the client supports
+- `w=200,h=200,fit=cover,g=face`: 200×200 face-aware avatar
+- `w=20,blur=10,q=30`: tiny blurred placeholder
 
 ## POC question
 
@@ -115,23 +115,28 @@ Specifically:
 
 ## Status
 
-🚧 **Pipeline built + unit-tested, not yet deployed.** The Worker (routing, R2 cache,
-signed imgproxy URLs) is implemented and green under vitest (27 tests). End-to-end
-verification is blocked on standing up the imgproxy box — the cold-miss path can't be
-exercised for real until then.
+✅ **Viable — pipeline proven end-to-end in production.** Deployed to the co/infra
+Cloudflare account and serving at `img.infra.coop` (Worker also at
+`co-infra-img.co-infra.workers.dev`). A real Bluesky blob transforms through imgproxy
+(`imgproxy.infra.coop`, on the [co-infra-ops](../co-infra-ops) droplet) and is stored in
+R2: first request `X-Cache: MISS`, repeat `X-Cache: HIT` served from R2. The
+transform-once/serve-forever model — the whole `~$150/mo vs ~$50k/mo` argument — holds in
+practice. 27 vitest tests green; typecheck clean.
 
 ## Roadmap
 
-**Phase 1 — Prove the pipeline**
+**Phase 1 — Prove the pipeline** ✅ *done*
 - [x] Worker: route, R2 cache-key, hit/miss branching
 - [x] Signed imgproxy URL construction (HMAC-SHA256, base64url source)
 - [x] R2 hit path serves stored bytes (unit-tested)
-- [ ] imgproxy: deploy on VPS, signed-URL config, PDS-origin allowance
-- [ ] Worker → imgproxy → R2 store → serve on a real cold miss
-- [ ] Verify byte-identical warm hit + cache headers against a live box
-- [ ] Cost/throughput measurement on a $10–20 VPS
+- [x] imgproxy deployed (Traefik + Cloudflare Origin Cert on the ops droplet)
+- [x] Worker → imgproxy → R2 store → serve on a real cold miss
+- [x] Warm hit served from R2 (`X-Cache: HIT`) verified against the live box
+- [ ] Cost/throughput measurement under real load
 
 **Phase 2 — Public-ready**
+- [ ] Harden error handling — invalid blobs must return a clean 404/502, never a
+      Worker exception (an invalid CID currently throws → `Error 1101`)
 - [ ] Attribution model (badge) replacing referrer allowlist
 - [ ] Abuse/hotlink protection appropriate for an open endpoint
 - [ ] Integration docs + attribution badge assets
@@ -152,13 +157,13 @@ npm test       # vitest
 ## Deploy (GitOps)
 
 Deploys are driven by git, same as the rest of the co-op: a reviewed merge to `main`
-ships. PRs (including from forks) run **CI only** — typecheck + tests, no secrets — so
+ships. PRs (including from forks) run **CI only** - typecheck + tests, no secrets - so
 anyone can contribute safely; `.github/workflows/deploy.yml` runs `wrangler deploy` only
 on push to `main`.
 
 Required GitHub Actions secret: `CLOUDFLARE_API_TOKEN` (the account id is pinned in
 `wrangler.jsonc`). Alternatively, connect the repo via Cloudflare's native Workers Builds
-and drop the deploy workflow — no GitHub secrets needed.
+and drop the deploy workflow - no GitHub secrets needed.
 
 Before the first deploy, provision the bindings and fill `wrangler.jsonc`:
 
