@@ -1,0 +1,37 @@
+{
+	"$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+	"name": "img-infra-coop",
+	"main": "src/index.ts",
+	"compatibility_date": "2024-01-01",
+	"compatibility_flags": ["nodejs_compat"],
+
+	// R2 bucket — durable cache for transformed blobs. Free egress via Cloudflare.
+	// Create with: wrangler r2 bucket create infra-coop-cache
+	"r2_buckets": [
+		{
+			"binding": "IMAGE_CACHE",
+			"bucket_name": "infra-coop-cache"
+		}
+	],
+
+	// KV namespace caching DID -> PDS endpoint mappings (1 hour TTL).
+	// Create with: wrangler kv namespace create "DID_CACHE"
+	"kv_namespaces": [
+		{
+			"binding": "DID_CACHE",
+			"id": "REPLACE_ME"
+		}
+	],
+
+	"vars": {
+		// imgproxy base URL (on the VPS). Worker proxies cache misses here.
+		"IMGPROXY_URL": "https://imgproxy.infra.coop"
+	}
+
+	// Secrets (set via CLI):
+	//   wrangler secret put IMGPROXY_KEY    // imgproxy signed-URL HMAC key
+	//   wrangler secret put IMGPROXY_SALT   // imgproxy signed-URL salt
+	//
+	// To serve from a custom domain, add a `routes` block, e.g.:
+	//   "routes": [{ "pattern": "img.infra.coop/*", "zone_name": "infra.coop" }]
+}
