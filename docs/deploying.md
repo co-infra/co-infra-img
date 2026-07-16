@@ -88,7 +88,7 @@ deploy on the same push.
 Request a real image and check the cache header.
 
 ```bash
-curl -sD - -o /dev/null "https://<your-host>/i/<did>/<cid>/w=512,f=webp" | grep -i x-cache
+curl -sD - -o /dev/null "https://<your-host>/blob/<did>/<cid>/w=512,f=webp" | grep -i x-cache
 ```
 
 The first request returns `X-Cache: MISS` and stores the result. A second request for the

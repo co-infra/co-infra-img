@@ -1,7 +1,7 @@
 /**
  * Image transformation handler - the core pipeline.
  *
- *   1. Parse `/i/{did}/{cid}/{params}` and normalize the transform.
+ *   1. Parse `/blob/{did}/{cid}/{params}` and normalize the transform.
  *   2. Look up the immutable R2 cache key.
  *        HIT  -> serve bytes straight from R2 (free-egress fast path).
  *        MISS -> resolve DID -> PDS, transform via a signed imgproxy URL,
@@ -24,7 +24,7 @@ const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 /**
  * Maps an imgproxy error status to a clear client-facing error. imgproxy passes
  * the source (PDS) status through, and atproto's `getBlob` returns 400
- * (`BlobNotFound`) — or 404 on some PDSes — for a missing blob, so those mean
+ * (`BlobNotFound`), or 404 on some PDSes, for a missing blob, so those mean
  * "blob not found", not a transform failure. 422 means the blob exists but
  * isn't a processable image; anything else is a genuine upstream failure.
  */
@@ -47,9 +47,9 @@ export async function handleImageRequest(
 	ctx: ExecutionContext
 ): Promise<Response> {
 	try {
-		const pathMatch = url.pathname.match(/^\/i\/([^/]+)\/([^/]+)\/(.+)$/);
+		const pathMatch = url.pathname.match(/^\/blob\/([^/]+)\/([^/]+)\/(.+)$/);
 		if (!pathMatch) {
-			return jsonError('Invalid URL format. Expected: /i/{did}/{cid}/{params}', 400);
+			return jsonError('Invalid URL format. Expected: /blob/{did}/{cid}/{params}', 400);
 		}
 
 		const [, didEncoded, cid, paramsString] = pathMatch;

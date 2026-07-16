@@ -37,7 +37,7 @@ every time after that, which keeps the service fast and cheap.
 URL format:
 
 ```
-https://img.infra.coop/i/{did}/{cid}/{params}
+https://img.infra.coop/blob/{did}/{cid}/{params}
 ```
 
 - `did` is the account id (`did:plc:...` or `did:web:...`), URL-encoded.
@@ -65,13 +65,13 @@ chooses one format per request so each result caches as a single entry.
 
 ```html
 <!-- 800px wide, best format the browser supports -->
-<img src="https://img.infra.coop/i/did:plc:abc123/bafkrei.../w=800,f=auto" />
+<img src="https://img.infra.coop/blob/did:plc:abc123/bafkrei.../w=800,f=auto" />
 
 <!-- 200 by 200 avatar, cropped to the face -->
-<img src="https://img.infra.coop/i/did:plc:abc123/bafkrei.../w=200,h=200,fit=cover,g=face" />
+<img src="https://img.infra.coop/blob/did:plc:abc123/bafkrei.../w=200,h=200,fit=cover,g=face" />
 
 <!-- Tiny blurred placeholder -->
-<img src="https://img.infra.coop/i/did:plc:abc123/bafkrei.../w=20,blur=10,q=30" />
+<img src="https://img.infra.coop/blob/did:plc:abc123/bafkrei.../w=20,blur=10,q=30" />
 ```
 
 ### Errors
