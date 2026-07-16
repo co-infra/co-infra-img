@@ -38,6 +38,8 @@ export interface ImageOps {
 	quality: number;
 	resize: ResizeType;
 	enlarge: boolean;
+	/** When true, pad the fitted image out to the exact box (imgproxy extend). */
+	pad: boolean;
 	/** imgproxy gravity token (e.g. `sm`, `no`, `we`, or `fp:0.5:0.3`). */
 	gravity?: string;
 	blur?: number;
@@ -65,7 +67,7 @@ export function parseImageOps(paramsString: string, acceptHeader: string | null)
 		}
 	}
 
-	const { resize, enlarge } = mapFit(raw.get('fit'));
+	const { resize, enlarge, pad } = mapFit(raw.get('fit'));
 
 	return {
 		width: parseIntInRange(raw.get('w') ?? raw.get('width'), 1, 4096),
@@ -73,6 +75,7 @@ export function parseImageOps(paramsString: string, acceptHeader: string | null)
 		quality: parseIntInRange(raw.get('q') ?? raw.get('quality'), 1, 100) ?? DEFAULT_QUALITY,
 		resize,
 		enlarge,
+		pad,
 		gravity: mapGravity(raw.get('g') ?? raw.get('gravity')),
 		blur: parseIntInRange(raw.get('blur'), 1, 250),
 		rotate: mapRotate(raw.get('rotate')),
@@ -100,17 +103,19 @@ function resolveFormat(value: string | undefined, acceptHeader: string | null): 
 	return 'jpeg';
 }
 
-function mapFit(value: string | undefined): { resize: ResizeType; enlarge: boolean } {
+function mapFit(value: string | undefined): { resize: ResizeType; enlarge: boolean; pad: boolean } {
 	switch (value) {
 		case 'cover':
 		case 'crop':
-			return { resize: 'fill', enlarge: true };
-		case 'contain':
+			return { resize: 'fill', enlarge: true, pad: false };
 		case 'pad':
-			return { resize: 'fit', enlarge: true };
+			// Fit inside the box, then pad out to the exact dimensions.
+			return { resize: 'fit', enlarge: true, pad: true };
+		case 'contain':
+			return { resize: 'fit', enlarge: true, pad: false };
 		// `scale-down` and the default never upscale.
 		default:
-			return { resize: 'fit', enlarge: false };
+			return { resize: 'fit', enlarge: false, pad: false };
 	}
 }
 
@@ -121,8 +126,10 @@ function mapGravity(value: string | undefined): string | undefined {
 
 	switch (value) {
 		case 'auto':
-		case 'face':
-			return 'sm'; // imgproxy smart gravity (libvips smartcrop / attention)
+		case 'smart':
+			// libvips smart crop: attention-based, keeps the salient region in
+			// frame. This is content-aware, not face detection.
+			return 'sm';
 		case 'left':
 			return 'we';
 		case 'right':
@@ -183,6 +190,7 @@ export function opsToken(ops: ImageOps): string {
 		`q=${ops.quality}`,
 		`rs=${ops.resize}`,
 		`en=${ops.enlarge ? 1 : 0}`,
+		`pad=${ops.pad ? 1 : 0}`,
 	];
 
 	if (ops.width !== undefined) {

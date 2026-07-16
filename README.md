@@ -52,8 +52,8 @@ https://img.infra.coop/blob/{did}/{cid}/{params}
 | `h` | `height` | Height in pixels | 1 to 4096 |
 | `q` | `quality` | Compression quality | 1 to 100, default 85 |
 | `f` | `format` | Output format | `auto`, `webp`, `avif`, `jpeg`, `png`, `gif` |
-| `fit` | | How to fit the target box | `cover`, `crop`, `contain`, `pad`, `scale-down` |
-| `g` | `gravity` | Crop focus | `auto`, `face`, `left`, `right`, `top`, `bottom`, or a point like `0.5x0.3` |
+| `fit` | | How to fit the target box | `cover`, `contain`, `pad`, `scale-down` |
+| `g` | `gravity` | Crop focus | `auto`, `left`, `right`, `top`, `bottom`, or a point like `0.5x0.3` |
 | `blur` | | Blur strength | 1 to 250 |
 | `rotate` | | Rotation in degrees | 90, 180, 270 |
 
@@ -61,14 +61,18 @@ Values outside a range are clamped rather than rejected. With `f=auto` (or no fo
 the CDN picks the best format the browser accepts, preferring AVIF, then WebP, then JPEG. It
 chooses one format per request so each result caches as a single entry.
 
+`fit=pad` fits the image inside the box and pads the rest out to the exact width and height,
+so it needs both `w` and `h`. `g=auto` uses content-aware smart cropping that keeps the main
+subject in frame. It is not face detection.
+
 ### Examples
 
 ```html
 <!-- 800px wide, best format the browser supports -->
 <img src="https://img.infra.coop/blob/did:plc:abc123/bafkrei.../w=800,f=auto" />
 
-<!-- 200 by 200 avatar, cropped to the face -->
-<img src="https://img.infra.coop/blob/did:plc:abc123/bafkrei.../w=200,h=200,fit=cover,g=face" />
+<!-- 200 by 200 avatar, smart-cropped to the subject -->
+<img src="https://img.infra.coop/blob/did:plc:abc123/bafkrei.../w=200,h=200,fit=cover,g=auto" />
 
 <!-- Tiny blurred placeholder -->
 <img src="https://img.infra.coop/blob/did:plc:abc123/bafkrei.../w=20,blur=10,q=30" />
