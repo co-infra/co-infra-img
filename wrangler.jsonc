@@ -3,31 +3,31 @@
 	"name": "img-infra-coop",
 	"main": "src/index.ts",
 	"compatibility_date": "2024-01-01",
-	"compatibility_flags": ["nodejs_compat"],
-
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	// R2 bucket — durable cache for transformed blobs. Free egress via Cloudflare.
-	// Create with: wrangler r2 bucket create infra-coop-cache
+	// Create with: wrangler r2 bucket create img-infra-coop-cache
+	// Binding must be IMAGE_CACHE — that's what src/env.ts and the handler read.
 	"r2_buckets": [
 		{
 			"binding": "IMAGE_CACHE",
-			"bucket_name": "infra-coop-cache"
+			"bucket_name": "img-infra-coop-cache"
 		}
 	],
-
 	// KV namespace caching DID -> PDS endpoint mappings (1 hour TTL).
-	// Create with: wrangler kv namespace create "DID_CACHE"
+	// Shared with the Refract worker — DID -> PDS mappings are generic, so both
+	// services warm the same cache and hit plc.directory less.
 	"kv_namespaces": [
 		{
 			"binding": "DID_CACHE",
-			"id": "REPLACE_ME"
+			"id": "6859301cc18344109e6a5d34311d3321"
 		}
 	],
-
 	"vars": {
 		// imgproxy base URL (on the VPS). Worker proxies cache misses here.
 		"IMGPROXY_URL": "https://imgproxy.infra.coop"
 	}
-
 	// Secrets (set via CLI):
 	//   wrangler secret put IMGPROXY_KEY    // imgproxy signed-URL HMAC key
 	//   wrangler secret put IMGPROXY_SALT   // imgproxy signed-URL salt
