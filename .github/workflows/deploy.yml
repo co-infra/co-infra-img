@@ -27,6 +27,6 @@ jobs:
       # Use the project's own wrangler (from package.json), not a version the
       # action bundles. account_id is pinned in wrangler.jsonc, so only the
       # token is needed.
-      - run: npx wrangler deploy
+      - run: npx wrangler deploy --message "GitHub Actions: ${{ github.actor }} @ ${{ github.sha }}"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
