@@ -16,12 +16,11 @@
 		}
 	],
 	// KV namespace caching DID -> PDS endpoint mappings (1 hour TTL).
-	// Create on the co/infra Cloudflare account and paste the id here:
-	//   wrangler kv namespace create DID_CACHE
+	// On the co/infra Cloudflare account.
 	"kv_namespaces": [
 		{
 			"binding": "DID_CACHE",
-			"id": "REPLACE_ME"
+			"id": "905e3bf86b9745e0ac0766e7a2ae9742"
 		}
 	],
 	"vars": {
