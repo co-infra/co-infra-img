@@ -50,12 +50,15 @@ https://img.infra.coop/blob/{did}/{cid}/{params}
 |---|---|---|---|
 | `w` | `width` | Width in pixels | 1 to 4096 |
 | `h` | `height` | Height in pixels | 1 to 4096 |
+| `dpr` | | Device pixel ratio, scales `w` and `h` | 1 to 2, default 1 |
 | `q` | `quality` | Compression quality | 1 to 100, default 85 |
 | `f` | `format` | Output format | `auto`, `webp`, `avif`, `jpeg`, `png`, `gif` |
 | `fit` | | How to fit the target box | `cover`, `contain`, `pad`, `scale-down` |
 | `g` | `gravity` | Crop focus | `auto`, `left`, `right`, `top`, `bottom`, or a point like `0.5x0.3` |
 | `blur` | | Blur strength | 1 to 250 |
+| `sharpen` | | Sharpen strength | 0 to 10 |
 | `rotate` | | Rotation in degrees | 90, 180, 270 |
+| `bg` | | Background color as hex | `fff` or `ffffff` |
 
 Values outside a range are clamped rather than rejected. With `f=auto` (or no format set)
 the CDN picks the best format the browser accepts, preferring AVIF, then WebP, then JPEG. It
@@ -64,6 +67,10 @@ chooses one format per request so each result caches as a single entry.
 `fit=pad` fits the image inside the box and pads the rest out to the exact width and height,
 so it needs both `w` and `h`. `g=auto` uses content-aware smart cropping that keeps the main
 subject in frame. It is not face detection.
+
+`dpr` scales `w` and `h` for high-density displays, so `w=200,dpr=2` renders at 400 pixels.
+It is capped so the result never exceeds 4096 per side. `bg` sets the fill for `fit=pad` and
+the color a transparent image flattens onto when the output format has no alpha, such as JPEG.
 
 ### Examples
 

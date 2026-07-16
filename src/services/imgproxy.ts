@@ -30,16 +30,27 @@ export function buildProcessingOptions(ops: ImageOps): string {
 			// remaining space (transparent where the output format allows).
 			opts.push('ex:1');
 		}
+		if (ops.dpr !== 1) {
+			opts.push(`dpr:${ops.dpr}`);
+		}
 	}
 
 	if (ops.gravity !== undefined) {
 		opts.push(`g:${ops.gravity}`);
 	}
 
+	if (ops.background !== undefined) {
+		opts.push(`bg:${ops.background}`);
+	}
+
 	opts.push(`q:${ops.quality}`);
 
 	if (ops.blur !== undefined) {
 		opts.push(`bl:${ops.blur}`);
+	}
+
+	if (ops.sharpen !== undefined) {
+		opts.push(`sh:${ops.sharpen}`);
 	}
 
 	if (ops.rotate !== undefined) {

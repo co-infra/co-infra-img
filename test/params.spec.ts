@@ -59,6 +59,24 @@ describe('parseImageOps', () => {
 		expect(parseImageOps('w=100,g=face', null).gravity).toBeUndefined();
 	});
 
+	it('caps dpr so the effective size stays within 4096', () => {
+		expect(parseImageOps('w=200,h=200,dpr=2', null).dpr).toBe(2);
+		expect(parseImageOps('w=200,dpr=1.5', null).dpr).toBe(1.5);
+		expect(parseImageOps('w=4096,dpr=2', null).dpr).toBe(1);
+		expect(parseImageOps('dpr=2', null).dpr).toBe(1);
+	});
+
+	it('parses sharpen and ignores non-positive values', () => {
+		expect(parseImageOps('w=100,sharpen=1.5', null).sharpen).toBe(1.5);
+		expect(parseImageOps('w=100,sharpen=0', null).sharpen).toBeUndefined();
+	});
+
+	it('parses a 3- or 6-digit hex background and rejects the rest', () => {
+		expect(parseImageOps('w=100,bg=ffffff', null).background).toBe('ffffff');
+		expect(parseImageOps('w=100,bg=FFF', null).background).toBe('fff');
+		expect(parseImageOps('w=100,bg=zzz', null).background).toBeUndefined();
+	});
+
 	it('only accepts 90/180/270 rotations', () => {
 		expect(parseImageOps('w=100,rotate=90', null).rotate).toBe(90);
 		expect(parseImageOps('w=100,rotate=45', null).rotate).toBeUndefined();
