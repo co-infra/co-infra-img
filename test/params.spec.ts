@@ -37,19 +37,26 @@ describe('parseImageOps', () => {
 		expect(parseImageOps('w=100,f=jpg', 'image/avif').format).toBe('jpeg');
 	});
 
-	it('maps fit to resize type and enlarge flag', () => {
-		expect(parseImageOps('w=100,fit=cover', null)).toMatchObject({ resize: 'fill', enlarge: true });
-		expect(parseImageOps('w=100,fit=contain', null)).toMatchObject({ resize: 'fit', enlarge: true });
+	it('maps fit to resize type, enlarge, and pad flags', () => {
+		expect(parseImageOps('w=100,fit=cover', null)).toMatchObject({ resize: 'fill', pad: false });
+		expect(parseImageOps('w=100,fit=contain', null)).toMatchObject({ resize: 'fit', pad: false });
+		expect(parseImageOps('w=100,h=100,fit=pad', null)).toMatchObject({ resize: 'fit', pad: true });
 		expect(parseImageOps('w=100,fit=scale-down', null)).toMatchObject({
 			resize: 'fit',
 			enlarge: false,
+			pad: false,
 		});
 	});
 
 	it('maps gravity keywords and focus-point coordinates', () => {
-		expect(parseImageOps('w=100,g=face', null).gravity).toBe('sm');
+		expect(parseImageOps('w=100,g=auto', null).gravity).toBe('sm');
+		expect(parseImageOps('w=100,g=smart', null).gravity).toBe('sm');
 		expect(parseImageOps('w=100,g=left', null).gravity).toBe('we');
 		expect(parseImageOps('w=100,g=0.5x0.3', null).gravity).toBe('fp:0.5:0.3');
+	});
+
+	it('does not treat g=face as smart crop, since there is no face detection', () => {
+		expect(parseImageOps('w=100,g=face', null).gravity).toBeUndefined();
 	});
 
 	it('only accepts 90/180/270 rotations', () => {

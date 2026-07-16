@@ -25,6 +25,11 @@ export function buildProcessingOptions(ops: ImageOps): string {
 		const w = ops.width ?? 0; // imgproxy treats 0 as unbounded
 		const h = ops.height ?? 0;
 		opts.push(`rs:${ops.resize}:${w}:${h}:${ops.enlarge ? 1 : 0}`);
+		if (ops.pad) {
+			// Extend the fitted image out to the requested box, padding the
+			// remaining space (transparent where the output format allows).
+			opts.push('ex:1');
+		}
 	}
 
 	if (ops.gravity !== undefined) {

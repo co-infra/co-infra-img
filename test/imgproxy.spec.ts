@@ -7,8 +7,13 @@ const SOURCE = 'https://pds.example.com/xrpc/com.atproto.sync.getBlob?did=did:pl
 
 describe('buildProcessingOptions', () => {
 	it('emits resize, gravity, quality, blur and rotate in canonical order', () => {
-		const ops = parseImageOps('w=800,h=600,fit=cover,g=face,q=70,blur=5,rotate=90', null);
+		const ops = parseImageOps('w=800,h=600,fit=cover,g=auto,q=70,blur=5,rotate=90', null);
 		expect(buildProcessingOptions(ops)).toBe('rs:fill:800:600:1/g:sm/q:70/bl:5/rot:90');
+	});
+
+	it('adds extend for fit=pad so the image is padded to the box', () => {
+		const ops = parseImageOps('w=800,h=600,fit=pad', null);
+		expect(buildProcessingOptions(ops)).toBe('rs:fit:800:600:1/ex:1/q:85');
 	});
 
 	it('omits resize entirely when neither width nor height is given', () => {
