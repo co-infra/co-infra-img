@@ -21,11 +21,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
-      - name: Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@v3
-        with:
-          # account_id is pinned in wrangler.jsonc, so only the token is needed.
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # Use the project's own wrangler (from package.json), not a version the
+      # action bundles. account_id is pinned in wrangler.jsonc, so only the
+      # token is needed.
+      - run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
