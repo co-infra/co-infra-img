@@ -23,11 +23,11 @@ export default {
 			return json({
 				name: 'img.infra.coop',
 				description: 'Public image CDN for the AT Protocol',
-				usage: '/i/{did}/{cid}/{params}',
+				usage: '/blob/{did}/{cid}/{params}',
 			});
 		}
 
-		if (url.pathname.startsWith('/i/')) {
+		if (url.pathname.startsWith('/blob/')) {
 			return handleImageRequest(request, url, env, ctx);
 		}
 

@@ -36,20 +36,20 @@ describe('img.infra.coop worker', () => {
 
 	describe('Image request validation', () => {
 		it('400s on a malformed path (missing params)', async () => {
-			const res = await dispatch(new IncomingRequest('https://img.infra.coop/i/did:plc:abc/bafkrei'));
+			const res = await dispatch(new IncomingRequest('https://img.infra.coop/blob/did:plc:abc/bafkrei'));
 			expect(res.status).toBe(400);
 		});
 
 		it('400s on an invalid DID', async () => {
 			const res = await dispatch(
-				new IncomingRequest('https://img.infra.coop/i/not-a-did/bafkrei/w=400')
+				new IncomingRequest('https://img.infra.coop/blob/not-a-did/bafkrei/w=400')
 			);
 			expect(res.status).toBe(400);
 		});
 
 		it('400s on an invalid CID', async () => {
 			const res = await dispatch(
-				new IncomingRequest('https://img.infra.coop/i/did:plc:abc/bad%2Fcid/w=400')
+				new IncomingRequest('https://img.infra.coop/blob/did:plc:abc/bad%2Fcid/w=400')
 			);
 			expect(res.status).toBe(400);
 		});
@@ -66,7 +66,7 @@ describe('img.infra.coop worker', () => {
 			await env.IMAGE_CACHE.put(key, bytes, { httpMetadata: { contentType: 'image/webp' } });
 
 			const res = await dispatch(
-				new IncomingRequest(`https://img.infra.coop/i/${did}/${cid}/w=400,f=webp`)
+				new IncomingRequest(`https://img.infra.coop/blob/${did}/${cid}/w=400,f=webp`)
 			);
 
 			expect(res.status).toBe(200);
