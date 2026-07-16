@@ -1,10 +1,11 @@
-# img.infra.coop
+# co/infra · image CDN
 
-**Public, free, at-scale image CDN for the AT Protocol ecosystem.**
+**Public, free, at-scale image CDN for the AT Protocol ecosystem.** Served at
+`img.infra.coop`.
 
-The first service in the [infra.coop](https://infra.coop) cooperative — community-owned
+The first service in the [co/infra](https://infra.coop) cooperative — community-owned
 public infrastructure for the open social web. This repo is the image CDN specifically;
-the `infra.coop` umbrella site (project index, supporters/sponsors, per-project about
+the co/infra umbrella site (project index, supporters/sponsors, per-project about
 pages, membership) is a separate project.
 
 A community-owned image transformation service for ATProto blobs. No signup, no API
@@ -27,7 +28,7 @@ a common avatar) is high-fanout across many apps, and a genuinely public service
 long tail of sizes/formats. At ~100M requests/month, `cf.image` runs to **~$50k/mo** —
 untenable for something free.
 
-infra.coop keeps Refract's URL contract and DID-resolution logic but swaps the
+co/infra keeps Refract's URL contract and DID-resolution logic but swaps the
 **transform + cache layer**:
 
 - **imgproxy** on a VPS does the actual transformation (fixed cost, not per-transform).
@@ -40,7 +41,7 @@ The same 100M req/mo lands around **~$150/mo**. That's the whole reason this is 
 separate project: at public-utility scale, per-transform billing doesn't work, so the
 architecture has to change.
 
-| | Refract (self-host) | infra.coop (public utility) |
+| | Refract (self-host) | co/infra (public utility) |
 |---|---|---|
 | Audience | One app, self-hosted | Whole ecosystem, hosted |
 | Transform | `cf.image` at edge | imgproxy on VPS |
@@ -136,7 +137,7 @@ exercised for real until then.
 - [ ] Integration docs + attribution badge assets
 - [ ] Announce to ATProto community
 
-> The `infra.coop` umbrella site (project index, supporters/sponsors, about pages),
+> The co/infra umbrella site (project index, supporters/sponsors, about pages),
 > Stripe pay-what-you-want membership, and future services (relay, labeler) live in
 > **separate projects**, not this repo. This repo is scoped to the image CDN.
 
@@ -162,10 +163,10 @@ deploy workflow — no GitHub secrets needed.)
 Before the first deploy, provision the bindings and fill `wrangler.jsonc`:
 
 ```bash
-wrangler r2 bucket create img-infra-coop-cache
+wrangler r2 bucket create co-infra-img-cache
 wrangler kv namespace create DID_CACHE      # paste the id into wrangler.jsonc
 wrangler secret put IMGPROXY_KEY            # must match the imgproxy box
-wrangler secret put IMGPROXY_SALT           # (see infra-coop-ops/scripts/gen-keys.sh)
+wrangler secret put IMGPROXY_SALT           # (see co-infra-ops/scripts/gen-keys.sh)
 ```
 
 Set `IMGPROXY_URL` in `wrangler.jsonc` to the box's imgproxy host.

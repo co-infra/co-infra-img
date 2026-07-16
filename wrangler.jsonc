@@ -1,27 +1,27 @@
 {
 	"$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
-	"name": "img-infra-coop",
+	"name": "co-infra-img",
 	"main": "src/index.ts",
 	"compatibility_date": "2024-01-01",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
 	// R2 bucket — durable cache for transformed blobs. Free egress via Cloudflare.
-	// Create with: wrangler r2 bucket create img-infra-coop-cache
+	// Create with: wrangler r2 bucket create co-infra-img-cache
 	// Binding must be IMAGE_CACHE — that's what src/env.ts and the handler read.
 	"r2_buckets": [
 		{
 			"binding": "IMAGE_CACHE",
-			"bucket_name": "img-infra-coop-cache"
+			"bucket_name": "co-infra-img-cache"
 		}
 	],
 	// KV namespace caching DID -> PDS endpoint mappings (1 hour TTL).
-	// Shared with the Refract worker — DID -> PDS mappings are generic, so both
-	// services warm the same cache and hit plc.directory less.
+	// Create on the co/infra Cloudflare account and paste the id here:
+	//   wrangler kv namespace create DID_CACHE
 	"kv_namespaces": [
 		{
 			"binding": "DID_CACHE",
-			"id": "6859301cc18344109e6a5d34311d3321"
+			"id": "REPLACE_ME"
 		}
 	],
 	"vars": {
