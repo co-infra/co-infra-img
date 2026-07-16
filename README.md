@@ -156,9 +156,9 @@ ships. PRs (including from forks) run **CI only** — typecheck + tests, no secr
 anyone can contribute safely; `.github/workflows/deploy.yml` runs `wrangler deploy` only
 on push to `main`.
 
-Required GitHub Actions secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
-(Alternatively, connect the repo via Cloudflare's native Workers Builds and drop the
-deploy workflow — no GitHub secrets needed.)
+Required GitHub Actions secret: `CLOUDFLARE_API_TOKEN` (the account id is pinned in
+`wrangler.jsonc`). Alternatively, connect the repo via Cloudflare's native Workers Builds
+and drop the deploy workflow — no GitHub secrets needed.
 
 Before the first deploy, provision the bindings and fill `wrangler.jsonc`:
 

@@ -1,6 +1,9 @@
 {
 	"$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
 	"name": "co-infra-img",
+	// co/infra Cloudflare account (pinned so local wrangler targets the right
+	// account — the domain + Worker live here, separate from the Refract account).
+	"account_id": "8f7a9b0f9be1272ee0dbc47e89380b38",
 	"main": "src/index.ts",
 	"compatibility_date": "2024-01-01",
 	"compatibility_flags": [
