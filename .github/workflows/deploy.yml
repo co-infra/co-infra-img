@@ -1,11 +1,11 @@
 name: Deploy
 
 # GitOps: a reviewed merge to main deploys the Worker. Runs ONLY on push to
-# main — never on PRs — so fork contributors never gain access to deploy
+# main - never on PRs - so fork contributors never gain access to deploy
 # secrets.
 #
 # Alternative: Cloudflare's native Git integration (Workers Builds) can deploy
-# on push without any GitHub secrets — connect the repo in the CF dashboard and
+# on push without any GitHub secrets - connect the repo in the CF dashboard and
 # delete this file. This workflow keeps deploys visible in-repo, consistent with
 # the ops repo.
 on:

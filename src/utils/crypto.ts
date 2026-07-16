@@ -21,7 +21,7 @@ export function hexToBytes(hex: string): Uint8Array {
 	return bytes;
 }
 
-/** URL-safe Base64 (no padding) of raw bytes — the form imgproxy expects. */
+/** URL-safe Base64 (no padding) of raw bytes - the form imgproxy expects. */
 export function base64url(bytes: Uint8Array): string {
 	let binary = '';
 	for (const byte of bytes) {
@@ -59,7 +59,7 @@ export async function imgproxySignature(
 	return base64url(new Uint8Array(signature));
 }
 
-/** Hex SHA-256 of a string — used to derive stable cache-key tokens. */
+/** Hex SHA-256 of a string - used to derive stable cache-key tokens. */
 export async function sha256Hex(value: string): Promise<string> {
 	const digest = await crypto.subtle.digest('SHA-256', encoder.encode(value));
 	return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');

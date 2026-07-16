@@ -1,5 +1,5 @@
 /**
- * Image transformation handler — the core pipeline.
+ * Image transformation handler - the core pipeline.
  *
  *   1. Parse `/i/{did}/{cid}/{params}` and normalize the transform.
  *   2. Look up the immutable R2 cache key.
@@ -20,6 +20,25 @@ import { jsonError } from '../utils/response';
 const DID_PATTERN = /^did:(plc|web):[a-zA-Z0-9._:%-]+$/;
 const CID_PATTERN = /^[a-zA-Z0-9]+$/;
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+
+/**
+ * Maps an imgproxy error status to a clear client-facing error. imgproxy passes
+ * the source (PDS) status through, and atproto's `getBlob` returns 400
+ * (`BlobNotFound`) — or 404 on some PDSes — for a missing blob, so those mean
+ * "blob not found", not a transform failure. 422 means the blob exists but
+ * isn't a processable image; anything else is a genuine upstream failure.
+ */
+export function classifyTransformError(imgproxyStatus: number): { message: string; status: number } {
+	if (imgproxyStatus === 400 || imgproxyStatus === 404) {
+		return { message: 'Blob not found', status: 404 };
+	}
+
+	if (imgproxyStatus === 422) {
+		return { message: 'Source is not a processable image', status: 422 };
+	}
+
+	return { message: `Upstream transform failed (imgproxy ${imgproxyStatus})`, status: 502 };
+}
 
 export async function handleImageRequest(
 	request: Request,
@@ -92,10 +111,8 @@ async function handleCacheMiss(
 	const transformed = await fetch(imgproxyUrl);
 
 	if (!transformed.ok) {
-		if (transformed.status === 404) {
-			return jsonError('Blob not found', 404);
-		}
-		return jsonError(`Transform failed: ${transformed.status}`, 502);
+		const { message, status } = classifyTransformError(transformed.status);
+		return jsonError(message, status);
 	}
 
 	const contentType = transformed.headers.get('Content-Type') ?? contentTypeFor(ops.format);

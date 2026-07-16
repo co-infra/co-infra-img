@@ -5,7 +5,7 @@
  * (did:plc) or a .well-known document (did:web), caching the result for
  * one hour so PDS migrations are picked up without a deploy.
  *
- * Ported verbatim from Refract — this logic is identical across both services.
+ * Ported verbatim from Refract - this logic is identical across both services.
  */
 import type { Env } from '../env';
 

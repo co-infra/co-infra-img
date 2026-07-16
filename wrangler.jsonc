@@ -2,16 +2,16 @@
 	"$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
 	"name": "co-infra-img",
 	// co/infra Cloudflare account (pinned so local wrangler targets the right
-	// account — the domain + Worker live here, separate from the Refract account).
+	// account - the domain + Worker live here, separate from the Refract account).
 	"account_id": "8f7a9b0f9be1272ee0dbc47e89380b38",
 	"main": "src/index.ts",
 	"compatibility_date": "2024-01-01",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
-	// R2 bucket — durable cache for transformed blobs. Free egress via Cloudflare.
+	// R2 bucket - durable cache for transformed blobs. Free egress via Cloudflare.
 	// Create with: wrangler r2 bucket create co-infra-img-cache
-	// Binding must be IMAGE_CACHE — that's what src/env.ts and the handler read.
+	// Binding must be IMAGE_CACHE - that's what src/env.ts and the handler read.
 	"r2_buckets": [
 		{
 			"binding": "IMAGE_CACHE",

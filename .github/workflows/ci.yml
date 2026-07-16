@@ -1,6 +1,6 @@
 name: CI
 
-# Runs on every PR (including forks) and on main. No secrets — safe for anyone
+# Runs on every PR (including forks) and on main. No secrets - safe for anyone
 # to trigger. Deploy is separate and only runs after a reviewed merge to main.
 on:
   pull_request:

@@ -135,8 +135,9 @@ practice. 27 vitest tests green; typecheck clean.
 - [ ] Cost/throughput measurement under real load
 
 **Phase 2 — Public-ready**
-- [ ] Harden error handling — invalid blobs must return a clean 404/502, never a
-      Worker exception (an invalid CID currently throws → `Error 1101`)
+- [x] Harden error handling — a missing blob returns a clean **404 "Blob not found"**
+      (imgproxy passes the PDS's 400/404 through), 422 for an unprocessable source, 502
+      for genuine upstream failures. No pre-flight fetch (would double PDS load)
 - [ ] Attribution model (badge) replacing referrer allowlist
 - [ ] Abuse/hotlink protection appropriate for an open endpoint
 - [ ] Integration docs + attribution badge assets

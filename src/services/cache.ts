@@ -2,7 +2,7 @@
  * R2 durable cache for transformed blobs.
  *
  * Key: `{did}/{cid}/{opsHash}.{ext}`. Because CIDs are content hashes and the
- * transform is fully described by `opsHash`, an entry is immutable forever —
+ * transform is fully described by `opsHash`, an entry is immutable forever -
  * no TTL, no invalidation. Serving from R2 is the free-egress fast path that
  * the whole economic model rests on.
  */

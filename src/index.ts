@@ -1,5 +1,5 @@
 /**
- * img.infra.coop — public, free, at-scale image CDN for the AT Protocol.
+ * img.infra.coop - public, free, at-scale image CDN for the AT Protocol.
  *
  * Edge router. Serves transformed ATProto blobs from a durable R2 cache,
  * transforming via imgproxy on a cache miss. See README for the architecture
