@@ -1,0 +1,31 @@
+name: Deploy
+
+# GitOps: a reviewed merge to main deploys the Worker. Runs ONLY on push to
+# main — never on PRs — so fork contributors never gain access to deploy
+# secrets.
+#
+# Alternative: Cloudflare's native Git integration (Workers Builds) can deploy
+# on push without any GitHub secrets — connect the repo in the CF dashboard and
+# delete this file. This workflow keeps deploys visible in-repo, consistent with
+# the ops repo.
+on:
+  push:
+    branches: [main]
+
+concurrency: deploy-worker
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Deploy to Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -1,0 +1,23 @@
+name: CI
+
+# Runs on every PR (including forks) and on main. No secrets — safe for anyone
+# to trigger. Deploy is separate and only runs after a reviewed merge to main.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Generates worker-configuration.d.ts (gitignored) that tsc depends on.
+      - run: npx wrangler types
+      - run: npx tsc --noEmit
+      - run: npm test

@@ -148,6 +148,28 @@ npm run dev    # wrangler dev
 npm test       # vitest
 ```
 
+## Deploy (GitOps)
+
+Deploys are driven by git, same as the rest of the co-op: a reviewed merge to `main`
+ships. PRs (including from forks) run **CI only** — typecheck + tests, no secrets — so
+anyone can contribute safely; `.github/workflows/deploy.yml` runs `wrangler deploy` only
+on push to `main`.
+
+Required GitHub Actions secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
+(Alternatively, connect the repo via Cloudflare's native Workers Builds and drop the
+deploy workflow — no GitHub secrets needed.)
+
+Before the first deploy, provision the bindings and fill `wrangler.jsonc`:
+
+```bash
+wrangler r2 bucket create img-infra-coop-cache
+wrangler kv namespace create DID_CACHE      # paste the id into wrangler.jsonc
+wrangler secret put IMGPROXY_KEY            # must match the imgproxy box
+wrangler secret put IMGPROXY_SALT           # (see infra-coop-ops/scripts/gen-keys.sh)
+```
+
+Set `IMGPROXY_URL` in `wrangler.jsonc` to the box's imgproxy host.
+
 ## License
 
 MIT
