@@ -9,6 +9,9 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	// img.infra.coop (custom domain) is the only public endpoint — no *.workers.dev.
+	"workers_dev": false,
+	"preview_urls": false,
 	// R2 bucket - durable cache for transformed blobs. Free egress via Cloudflare.
 	// Create with: wrangler r2 bucket create co-infra-img-cache
 	// Binding must be IMAGE_CACHE - that's what src/env.ts and the handler read.
