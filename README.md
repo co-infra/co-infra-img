@@ -72,6 +72,35 @@ browser ──▶ Cloudflare Worker (img.infra.coop)
 - **imgproxy** — transform engine on a cheap VPS (Hetzner). Only touched on cache miss;
   hot content approaches 100% hit ratio and never hits it.
 
+## URL format
+
+```
+https://img.infra.coop/i/{did}/{cid}/{params}
+```
+
+`params` is a comma-separated list (Refract's vocabulary, so URLs port over). It resolves
+to imgproxy processing options internally.
+
+| Short | Long | Description | Notes |
+|-------|------|-------------|-------|
+| `w` | `width` | Width (px) | 1–4096, clamped |
+| `h` | `height` | Height (px) | 1–4096, clamped |
+| `q` | `quality` | Quality | 1–100, default 85 |
+| `f` | `format` | `auto`/`webp`/`avif`/`jpeg`/`png`/`gif` | `auto` negotiates AVIF > WebP > JPEG from `Accept` |
+| `fit` | | `cover`/`crop`/`contain`/`pad`/`scale-down` | `cover`/`crop` → imgproxy `fill`; others → `fit`; only `contain`/`pad`/`cover`/`crop` upscale |
+| `g` | `gravity` | `face`/`auto`/`left`/`right`/`top`/`bottom`/`0.5x0.3` | `face`/`auto` → smart gravity; coords → focus point |
+| `blur` | | Blur sigma | 1–250 |
+| `rotate` | | `90`/`180`/`270` | |
+
+`f=auto` is negotiated into a concrete format *server-side* so each real format is one
+deterministic cache entry (no `Vary`-driven cache explosion).
+
+Examples:
+
+- `w=800,f=auto` — 800px wide, best format the client supports
+- `w=200,h=200,fit=cover,g=face` — 200×200 face-aware avatar
+- `w=20,blur=10,q=30` — tiny blurred placeholder
+
 ## POC question
 
 **Is R2 + imgproxy behind a Worker a correct and cheap enough pipeline to serve
@@ -85,16 +114,20 @@ Specifically:
 
 ## Status
 
-🚧 **Bootstrapping.** Architecture decided (R2 + imgproxy, splitting from Refract for
-public-utility scale). Worker scaffold next. Nothing deployed yet.
+🚧 **Pipeline built + unit-tested, not yet deployed.** The Worker (routing, R2 cache,
+signed imgproxy URLs) is implemented and green under vitest (27 tests). End-to-end
+verification is blocked on standing up the imgproxy box — the cold-miss path can't be
+exercised for real until then.
 
 ## Roadmap
 
 **Phase 1 — Prove the pipeline**
-- [ ] Worker: route, R2 cache-key, hit/miss branching
+- [x] Worker: route, R2 cache-key, hit/miss branching
+- [x] Signed imgproxy URL construction (HMAC-SHA256, base64url source)
+- [x] R2 hit path serves stored bytes (unit-tested)
 - [ ] imgproxy: deploy on VPS, signed-URL config, PDS-origin allowance
-- [ ] Worker → imgproxy → R2 store → serve on cold miss
-- [ ] Serve from R2 on warm hit; verify byte-identical + cache headers
+- [ ] Worker → imgproxy → R2 store → serve on a real cold miss
+- [ ] Verify byte-identical warm hit + cache headers against a live box
 - [ ] Cost/throughput measurement on a $10–20 VPS
 
 **Phase 2 — Public-ready**

@@ -1,25 +1,36 @@
 /**
- * infra.coop — public image CDN for the AT Protocol.
+ * img.infra.coop — public, free, at-scale image CDN for the AT Protocol.
  *
- * Edge router: resolves an ATProto blob URL to a durable R2 cache entry,
- * transforming via imgproxy on a cache miss. See README for architecture.
- *
- * This is the bootstrap stub — the routing, R2 cache, and imgproxy pipeline
- * land on the `dev` branch.
+ * Edge router. Serves transformed ATProto blobs from a durable R2 cache,
+ * transforming via imgproxy on a cache miss. See README for the architecture
+ * and why this is a separate service from Refract.
  */
 import type { Env } from './env';
+import { handleImageRequest } from './handlers/image';
+import { json, jsonError } from './utils/response';
+
+export type { Env };
 
 export default {
-	async fetch(request: Request, env: Env): Promise<Response> {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 
 		if (url.pathname === '/health') {
-			return new Response('OK');
+			return new Response('OK', { status: 200 });
 		}
 
-		return new Response(
-			JSON.stringify({ service: 'infra.coop', status: 'bootstrap' }),
-			{ headers: { 'Content-Type': 'application/json' } }
-		);
+		if (url.pathname === '/') {
+			return json({
+				name: 'img.infra.coop',
+				description: 'Public image CDN for the AT Protocol',
+				usage: '/i/{did}/{cid}/{params}',
+			});
+		}
+
+		if (url.pathname.startsWith('/i/')) {
+			return handleImageRequest(request, url, env, ctx);
+		}
+
+		return jsonError('Not found', 404);
 	},
 } satisfies ExportedHandler<Env>;
