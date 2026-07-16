@@ -103,4 +103,5 @@ npm test       # vitest
 
 ## License
 
-MIT
+Licensed under the GNU Affero General Public License, version 3 or later
+(`AGPL-3.0-or-later`). See [LICENSE](LICENSE).
