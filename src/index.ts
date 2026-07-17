@@ -7,6 +7,7 @@
  */
 import type { Env } from './env';
 import { handleImageRequest } from './handlers/image';
+import { handlePurge } from './handlers/admin';
 import { json, jsonError } from './utils/response';
 
 export type { Env };
@@ -29,6 +30,10 @@ export default {
 
 		if (url.pathname.startsWith('/blob/')) {
 			return handleImageRequest(request, url, env, ctx);
+		}
+
+		if (url.pathname === '/admin/purge') {
+			return handlePurge(request, env);
 		}
 
 		return jsonError('Not found', 404);

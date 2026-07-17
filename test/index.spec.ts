@@ -76,4 +76,46 @@ describe('img.infra.coop worker', () => {
 			expect(new Uint8Array(await res.arrayBuffer())).toEqual(bytes);
 		});
 	});
+
+	describe('Admin purge', () => {
+		function purge(body: unknown, token?: string) {
+			const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+			if (token) {
+				headers.Authorization = `Bearer ${token}`;
+			}
+			return dispatch(
+				new IncomingRequest('https://img.infra.coop/admin/purge', {
+					method: 'POST',
+					headers,
+					body: JSON.stringify(body),
+				})
+			);
+		}
+
+		it('401s without the token', async () => {
+			expect((await purge({ did: 'did:plc:x' })).status).toBe(401);
+			expect((await purge({ did: 'did:plc:x' }, 'wrong')).status).toBe(401);
+		});
+
+		it('405s on a non-POST', async () => {
+			const res = await dispatch(new IncomingRequest('https://img.infra.coop/admin/purge'));
+			expect(res.status).toBe(405);
+		});
+
+		it('400s on a missing or bad DID', async () => {
+			expect((await purge({}, 'test-purge-token')).status).toBe(400);
+			expect((await purge({ did: 'not-a-did' }, 'test-purge-token')).status).toBe(400);
+		});
+
+		it('purges every variant for a DID and reports the count', async () => {
+			const did = 'did:plc:purgeviaendpoint';
+			await env.IMAGE_CACHE.put(`${did}/cid1/a.webp`, new Uint8Array([1]));
+			await env.IMAGE_CACHE.put(`${did}/cid2/b.jpg`, new Uint8Array([2]));
+
+			const res = await purge({ did }, 'test-purge-token');
+			expect(res.status).toBe(200);
+			expect(await res.json()).toEqual({ purged: 2 });
+			expect(await env.IMAGE_CACHE.get(`${did}/cid1/a.webp`)).toBeNull();
+		});
+	});
 });

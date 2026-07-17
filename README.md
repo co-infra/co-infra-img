@@ -29,8 +29,10 @@ image.
 4. It stores the result in the cache and returns it with long-lived cache headers.
 
 A CID is a content hash, so the bytes behind it never change. A transformed result is
-therefore safe to cache forever. A popular image is transformed once and served from cache
-every time after that, which keeps the service fast and cheap.
+therefore safe to reuse, and a popular image is transformed once and served from cache every
+time after that, which keeps the service fast and cheap. The cache follows the source: when a
+blob is deleted the cached variants are removed, and variants that go unaccessed for about a
+month are evicted.
 
 ## Using it
 

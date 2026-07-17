@@ -15,11 +15,17 @@ import { resolveDid, isValidPdsHost } from '../services/did';
 import { parseImageOps } from '../services/params';
 import { buildCacheKey, contentTypeFor, putCached } from '../services/cache';
 import { buildSignedImgproxyUrl } from '../services/imgproxy';
+import { purgePrefix } from '../services/purge';
 import { jsonError } from '../utils/response';
 
 const DID_PATTERN = /^did:(plc|web):[a-zA-Z0-9._:%-]+$/;
 const CID_PATTERN = /^[a-zA-Z0-9]+$/;
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+
+// After this long, a served cache entry is rechecked against its PDS, off the
+// hot path. Kept below the R2 lifecycle window so a live entry is re-put (which
+// resets its age) before lifecycle would evict it.
+const REVALIDATE_AFTER_MS = 15 * 24 * 60 * 60 * 1000; // 15 days
 
 /**
  * Maps an imgproxy error status to a clear client-facing error. imgproxy passes
@@ -68,7 +74,7 @@ export async function handleImageRequest(
 
 		const cached = await env.IMAGE_CACHE.get(cacheKey);
 		if (cached) {
-			return serveFromR2(cached, ops.format);
+			return serveCached(cached, did, cid, cacheKey, ops.format, env, ctx);
 		}
 
 		return await handleCacheMiss(did, cid, ops, cacheKey, env, ctx);
@@ -78,12 +84,82 @@ export async function handleImageRequest(
 	}
 }
 
-function serveFromR2(object: R2ObjectBody, format: Parameters<typeof contentTypeFor>[0]): Response {
+/**
+ * Serves a cached variant. Within the revalidation window, it streams straight
+ * from R2. Older than that, it is served immediately and, off the hot path, the
+ * source blob is rechecked: the variant is re-put to reset its age if the blob
+ * still exists, or every variant is purged if the blob is gone.
+ */
+async function serveCached(
+	object: R2ObjectBody,
+	did: string,
+	cid: string,
+	cacheKey: string,
+	format: Parameters<typeof contentTypeFor>[0],
+	env: Env,
+	ctx: ExecutionContext
+): Promise<Response> {
+	const contentType = object.httpMetadata?.contentType ?? contentTypeFor(format);
+
+	if (Date.now() - object.uploaded.getTime() <= REVALIDATE_AFTER_MS) {
+		return serveResponse(object.body, contentType, 'HIT');
+	}
+
+	// Buffer so the same bytes serve this request and re-put on revalidation.
+	const bytes = await object.arrayBuffer();
+	ctx.waitUntil(revalidateBlob(did, cid, cacheKey, bytes, contentType, env));
+	return serveResponse(bytes, contentType, 'HIT');
+}
+
+function serveResponse(body: BodyInit, contentType: string, xCache: string): Response {
 	const headers = new Headers();
-	headers.set('Content-Type', object.httpMetadata?.contentType ?? contentTypeFor(format));
+	headers.set('Content-Type', contentType);
 	headers.set('Cache-Control', IMMUTABLE_CACHE_CONTROL);
-	headers.set('X-Cache', 'HIT');
-	return new Response(object.body, { headers });
+	headers.set('X-Cache', xCache);
+	return new Response(body, { headers });
+}
+
+function blobSourceUrl(pdsEndpoint: string, did: string, cid: string): string {
+	return (
+		`${pdsEndpoint}/xrpc/com.atproto.sync.getBlob` +
+		`?did=${encodeURIComponent(did)}&cid=${encodeURIComponent(cid)}`
+	);
+}
+
+/**
+ * Rechecks a blob against its PDS. A 400 or 404 means it is gone (atproto
+ * returns 400 BlobNotFound, some PDSes 404), so every variant is purged. If it
+ * still exists, the served variant is re-put to reset its age. Transient errors
+ * are ignored, leaving the entry to be rechecked on a later request.
+ */
+async function revalidateBlob(
+	did: string,
+	cid: string,
+	cacheKey: string,
+	bytes: ArrayBuffer,
+	contentType: string,
+	env: Env
+): Promise<void> {
+	const pdsEndpoint = await resolveDid(did, env);
+	if (!pdsEndpoint || !isValidPdsHost(pdsEndpoint)) {
+		return;
+	}
+
+	let res: Response;
+	try {
+		res = await fetch(blobSourceUrl(pdsEndpoint, did, cid), { headers: { Range: 'bytes=0-0' } });
+	} catch {
+		return;
+	}
+
+	if (res.status === 404 || res.status === 400) {
+		await purgePrefix(env, `${did}/${cid}/`);
+		return;
+	}
+
+	if (res.ok) {
+		await env.IMAGE_CACHE.put(cacheKey, bytes, { httpMetadata: { contentType } });
+	}
 }
 
 async function handleCacheMiss(
@@ -103,10 +179,7 @@ async function handleCacheMiss(
 		return jsonError('Invalid PDS endpoint', 403);
 	}
 
-	const sourceUrl =
-		`${pdsEndpoint}/xrpc/com.atproto.sync.getBlob` +
-		`?did=${encodeURIComponent(did)}&cid=${encodeURIComponent(cid)}`;
-
+	const sourceUrl = blobSourceUrl(pdsEndpoint, did, cid);
 	const imgproxyUrl = await buildSignedImgproxyUrl(sourceUrl, ops, env);
 	const transformed = await fetch(imgproxyUrl);
 
