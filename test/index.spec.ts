@@ -73,6 +73,8 @@ describe('img.infra.coop worker', () => {
 			expect(res.headers.get('X-Cache')).toBe('HIT');
 			expect(res.headers.get('Content-Type')).toBe('image/webp');
 			expect(res.headers.get('Cache-Control')).toContain('immutable');
+			expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
+			expect(res.headers.get('Timing-Allow-Origin')).toBe('*');
 			expect(new Uint8Array(await res.arrayBuffer())).toEqual(bytes);
 		});
 	});

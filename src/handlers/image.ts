@@ -16,7 +16,7 @@ import { parseImageOps } from '../services/params';
 import { buildCacheKey, contentTypeFor, putCached } from '../services/cache';
 import { buildSignedImgproxyUrl } from '../services/imgproxy';
 import { purgePrefix } from '../services/purge';
-import { jsonError } from '../utils/response';
+import { jsonError, CORS_HEADERS } from '../utils/response';
 
 const DID_PATTERN = /^did:(plc|web):[a-zA-Z0-9._:%-]+$/;
 const CID_PATTERN = /^[a-zA-Z0-9]+$/;
@@ -112,7 +112,7 @@ async function serveCached(
 }
 
 function serveResponse(body: BodyInit, contentType: string, xCache: string): Response {
-	const headers = new Headers();
+	const headers = new Headers(CORS_HEADERS);
 	headers.set('Content-Type', contentType);
 	headers.set('Cache-Control', IMMUTABLE_CACHE_CONTROL);
 	headers.set('X-Cache', xCache);
@@ -194,9 +194,5 @@ async function handleCacheMiss(
 	// Cache after responding so the store never adds to this request's latency.
 	ctx.waitUntil(putCached(env, cacheKey, bytes, contentType));
 
-	const headers = new Headers();
-	headers.set('Content-Type', contentType);
-	headers.set('Cache-Control', IMMUTABLE_CACHE_CONTROL);
-	headers.set('X-Cache', 'MISS');
-	return new Response(bytes, { headers });
+	return serveResponse(bytes, contentType, 'MISS');
 }
