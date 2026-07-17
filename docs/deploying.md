@@ -22,6 +22,8 @@ The Worker uses three bindings and two secrets, declared in `wrangler.jsonc`:
 - `IMGPROXY_URL`, the base URL of your imgproxy instance.
 - `IMGPROXY_KEY` and `IMGPROXY_SALT`, the signing secrets. They must match the values
   imgproxy is configured with, or every request fails its signature check.
+- `PURGE_TOKEN`, a shared secret that authenticates `POST /admin/purge`. The Jetstream
+  consumer holds the same value. See Cache invalidation below.
 
 ## Steps
 
@@ -47,11 +49,13 @@ The Worker uses three bindings and two secrets, declared in `wrangler.jsonc`:
 3. Point the Worker at your imgproxy. Set `IMGPROXY_URL` in `wrangler.jsonc`, for example
    `https://imgproxy.example.com`.
 
-4. Set the signing secrets. Use the same key and salt that imgproxy is configured with.
+4. Set the secrets. Use the same imgproxy key and salt that imgproxy is configured with, and
+   a purge token of your choosing (the Jetstream consumer will hold the same value).
 
    ```bash
    wrangler secret put IMGPROXY_KEY
    wrangler secret put IMGPROXY_SALT
+   wrangler secret put PURGE_TOKEN
    ```
 
 5. Deploy.
@@ -93,3 +97,24 @@ curl -sD - -o /dev/null "https://<your-host>/blob/<did>/<cid>/w=512,f=webp" | gr
 
 The first request returns `X-Cache: MISS` and stores the result. A second request for the
 same URL returns `X-Cache: HIT` and is served from the cache.
+
+## Cache invalidation
+
+The cache follows the source. Deleted blobs are removed and cold variants are evicted, in
+three ways that work together:
+
+- **Account deletion (instant).** A Jetstream consumer watches the firehose for accounts that
+  go inactive and calls `POST /admin/purge` with the DID. See the `co-infra-ops` repo for the
+  consumer. The endpoint takes `{"did": "..."}` (or `{"did": "...", "cid": "..."}` for one
+  blob), authenticated with `Authorization: Bearer $PURGE_TOKEN`, and deletes every cached
+  variant under that prefix.
+- **Single-blob deletion (on access).** When a cached variant older than 15 days is served,
+  the Worker rechecks the source blob against its PDS off the hot path. If the blob is gone it
+  purges every variant. If it still exists it re-puts the variant, which resets its age.
+- **Cold eviction (storage).** Add an R2 lifecycle rule on the cache bucket to delete objects
+  about 30 days after they were last written. Because the re-put above resets the age of live
+  content, only genuinely cold variants age out. Set this in the R2 dashboard under the
+  bucket's Settings, object lifecycle rules, delete after 30 days.
+
+Keep the lifecycle window (30 days) comfortably larger than the revalidation window (15 days)
+so an access always gets the chance to re-put and keep live content from being evicted.
