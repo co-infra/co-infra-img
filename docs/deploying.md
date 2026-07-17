@@ -71,21 +71,20 @@ The Worker uses three bindings and two secrets, declared in `wrangler.jsonc`:
    in the Cloudflare dashboard, or add a route to `wrangler.jsonc`. To make the custom domain
    the only public URL, set `workers_dev` to `false` in `wrangler.jsonc`.
 
-## Automatic deploys (optional)
+## Automatic deploys
 
-Two ways to deploy on every push. Pick one.
+Deploys run through Cloudflare's native Git connection (Workers Builds). In the Cloudflare
+dashboard, open the Worker, go to its build settings, and connect the repository. Set the
+production branch to `main`, leave the build command empty (`wrangler deploy` bundles the
+Worker itself, so there is no separate build step), and set the deploy command to
+`npx wrangler deploy`. There are no build variables to set, because the bindings and the
+`IMGPROXY_URL` var live in `wrangler.jsonc` and the secrets already sit on the Worker.
+Cloudflare installs dependencies, builds, and deploys on every push to `main`, using its own
+GitHub connection, so there is no API token to manage.
 
-**GitHub Actions.** The repo ships a workflow that runs `wrangler deploy` on every merge to
-`main`. To use it, add a repository secret named `CLOUDFLARE_API_TOKEN` with a token scoped
-to your account. The token needs Workers Scripts edit, Workers R2 Storage edit, Workers KV
-Storage edit, and Account Settings read. The account id is read from `wrangler.jsonc`, so no
-other secret is needed.
-
-**Cloudflare Git connection.** In the Cloudflare dashboard, open the Worker, go to its build
-settings, and connect the repository (Workers Builds). Cloudflare builds and deploys on
-every push to the branch you choose, using its own GitHub connection, so there is no API
-token to manage. If you use this, delete the GitHub Actions deploy workflow so both do not
-deploy on the same push.
+Tests stay on GitHub Actions. The `ci.yml` workflow runs the type check and test suite on
+every pull request, and branch protection requires it to pass before a merge. Cloudflare only
+deploys once a reviewed merge reaches `main`.
 
 ## Verifying
 

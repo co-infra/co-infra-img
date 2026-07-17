@@ -36,6 +36,7 @@
 	// Secrets (set via CLI):
 	//   wrangler secret put IMGPROXY_KEY    // imgproxy signed-URL HMAC key
 	//   wrangler secret put IMGPROXY_SALT   // imgproxy signed-URL salt
+	//   wrangler secret put PURGE_TOKEN     // authenticates POST /admin/purge
 	//
 	// To serve from a custom domain, add a `routes` block, e.g.:
 	//   "routes": [{ "pattern": "img.infra.coop/*", "zone_name": "infra.coop" }]
