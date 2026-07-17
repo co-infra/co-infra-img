@@ -40,10 +40,16 @@ export interface ImageOps {
 	enlarge: boolean;
 	/** When true, pad the fitted image out to the exact box (imgproxy extend). */
 	pad: boolean;
+	/** Device pixel ratio, already capped so the effective size stays within 4096. */
+	dpr: number;
 	/** imgproxy gravity token (e.g. `sm`, `no`, `we`, or `fp:0.5:0.3`). */
 	gravity?: string;
 	blur?: number;
+	/** imgproxy sharpen sigma. */
+	sharpen?: number;
 	rotate?: 0 | 90 | 180 | 270;
+	/** Background hex color without `#`, for pad fill and flattening transparency. */
+	background?: string;
 	format: OutputFormat;
 }
 
@@ -68,19 +74,52 @@ export function parseImageOps(paramsString: string, acceptHeader: string | null)
 	}
 
 	const { resize, enlarge, pad } = mapFit(raw.get('fit'));
+	const width = parseIntInRange(raw.get('w') ?? raw.get('width'), 1, 4096);
+	const height = parseIntInRange(raw.get('h') ?? raw.get('height'), 1, 4096);
 
 	return {
-		width: parseIntInRange(raw.get('w') ?? raw.get('width'), 1, 4096),
-		height: parseIntInRange(raw.get('h') ?? raw.get('height'), 1, 4096),
+		width,
+		height,
 		quality: parseIntInRange(raw.get('q') ?? raw.get('quality'), 1, 100) ?? DEFAULT_QUALITY,
 		resize,
 		enlarge,
 		pad,
+		dpr: resolveDpr(raw.get('dpr'), width, height),
 		gravity: mapGravity(raw.get('g') ?? raw.get('gravity')),
 		blur: parseIntInRange(raw.get('blur'), 1, 250),
+		sharpen: parseFloatInRange(raw.get('sharpen'), 0, 10),
 		rotate: mapRotate(raw.get('rotate')),
+		background: parseHexColor(raw.get('bg')),
 		format: resolveFormat(raw.get('f') ?? raw.get('format'), acceptHeader),
 	};
+}
+
+/**
+ * Device pixel ratio, 1 to 2. Capped so the effective output (largest dimension
+ * times dpr) never exceeds 4096, which stops a crafted URL from forcing a huge
+ * render. Returns 1 when no size is set, since dpr only scales a resize.
+ */
+function resolveDpr(value: string | undefined, width?: number, height?: number): number {
+	const requested = value === undefined ? 1 : parseFloat(value);
+	if (Number.isNaN(requested)) {
+		return 1;
+	}
+
+	const maxDim = Math.max(width ?? 0, height ?? 0);
+	if (maxDim === 0) {
+		return 1;
+	}
+
+	return clamp(requested, 1, Math.min(2, 4096 / maxDim));
+}
+
+/** Parses a 3- or 6-digit hex color (no `#`), lowercased. Ignores anything else. */
+function parseHexColor(value: string | undefined): string | undefined {
+	if (value === undefined || !/^([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value)) {
+		return undefined;
+	}
+
+	return value.toLowerCase();
 }
 
 /**
@@ -175,6 +214,19 @@ function parseIntInRange(value: string | undefined, min: number, max: number): n
 	return clamp(parsed, min, max);
 }
 
+function parseFloatInRange(value: string | undefined, min: number, max: number): number | undefined {
+	if (value === undefined) {
+		return undefined;
+	}
+
+	const parsed = parseFloat(value);
+	if (Number.isNaN(parsed) || parsed <= min) {
+		return undefined;
+	}
+
+	return clamp(parsed, min, max);
+}
+
 function clamp(value: number, min: number, max: number): number {
 	return Math.min(Math.max(value, min), max);
 }
@@ -191,6 +243,7 @@ export function opsToken(ops: ImageOps): string {
 		`rs=${ops.resize}`,
 		`en=${ops.enlarge ? 1 : 0}`,
 		`pad=${ops.pad ? 1 : 0}`,
+		`dpr=${ops.dpr}`,
 	];
 
 	if (ops.width !== undefined) {
@@ -205,8 +258,14 @@ export function opsToken(ops: ImageOps): string {
 	if (ops.blur !== undefined) {
 		parts.push(`bl=${ops.blur}`);
 	}
+	if (ops.sharpen !== undefined) {
+		parts.push(`sh=${ops.sharpen}`);
+	}
 	if (ops.rotate !== undefined) {
 		parts.push(`rot=${ops.rotate}`);
+	}
+	if (ops.background !== undefined) {
+		parts.push(`bg=${ops.background}`);
 	}
 
 	return parts.join(';');

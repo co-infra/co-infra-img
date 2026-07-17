@@ -16,6 +16,16 @@ describe('buildProcessingOptions', () => {
 		expect(buildProcessingOptions(ops)).toBe('rs:fit:800:600:1/ex:1/q:85');
 	});
 
+	it('adds dpr when scaling for high-density displays', () => {
+		const ops = parseImageOps('w=200,dpr=2', null);
+		expect(buildProcessingOptions(ops)).toBe('rs:fit:200:0:0/dpr:2/q:85');
+	});
+
+	it('adds sharpen and background', () => {
+		const ops = parseImageOps('w=100,sharpen=1,bg=fff', null);
+		expect(buildProcessingOptions(ops)).toBe('rs:fit:100:0:0/bg:fff/q:85/sh:1');
+	});
+
 	it('omits resize entirely when neither width nor height is given', () => {
 		const ops = parseImageOps('q=90', null);
 		expect(buildProcessingOptions(ops)).toBe('q:90');
