@@ -17,4 +17,8 @@ export interface Env {
 	// imgproxy signed-URL HMAC key and salt (hex).
 	IMGPROXY_KEY: string;
 	IMGPROXY_SALT: string;
+
+	// Shared token authenticating POST /admin/purge (the Jetstream consumer holds
+	// the same value). Set via `wrangler secret put PURGE_TOKEN`.
+	PURGE_TOKEN: string;
 }
